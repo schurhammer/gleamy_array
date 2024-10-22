@@ -23,33 +23,43 @@ pub fn tuple2(a, b) {
 }
 
 @external(erlang, "gleamy/array", "tuple0")
+@external(javascript, "../gleamy_array.ffi.mjs", "new_node")
 fn new_node() -> Node(a)
 
 @external(erlang, "gleamy/array", "tuple2")
+@external(javascript, "../gleamy_array.ffi.mjs", "new_node_2")
 fn new_node_2(a: Node(a), b: Node(a)) -> Node(a)
 
 @external(erlang, "erlang", "element")
+@external(javascript, "../gleamy_array.ffi.mjs", "element")
 fn leaf_get_element(index: Int, leaf: Node(a)) -> a
 
 @external(erlang, "erlang", "setelement")
+@external(javascript, "../gleamy_array.ffi.mjs", "set_element")
 fn leaf_set_element(index: Int, leaf: Node(a), value: a) -> Node(a)
 
 @external(erlang, "erlang", "append_element")
+@external(javascript, "../gleamy_array.ffi.mjs", "append_element")
 fn leaf_append_element(leaf: Node(a), value: a) -> Node(a)
 
 @external(erlang, "erlang", "element")
+@external(javascript, "../gleamy_array.ffi.mjs", "element")
 fn node_get_element(index: Int, node: Node(a)) -> Node(a)
 
 @external(erlang, "erlang", "setelement")
+@external(javascript, "../gleamy_array.ffi.mjs", "set_element")
 fn node_set_element(index: Int, node: Node(a), value: Node(a)) -> Node(a)
 
 @external(erlang, "erlang", "append_element")
+@external(javascript, "../gleamy_array.ffi.mjs", "append_element")
 fn node_append_element(node: Node(a), value: Node(a)) -> Node(a)
 
 @external(erlang, "erlang", "delete_element")
+@external(javascript, "../gleamy_array.ffi.mjs", "delete_element")
 fn delete_element(index: Int, node: Node(a)) -> Node(a)
 
 @external(erlang, "erlang", "tuple_size")
+@external(javascript, "../gleamy_array.ffi.mjs", "size")
 fn node_size(node: Node(a)) -> Int
 
 fn do_push(n: Node(a), i: Int, v: a, level: Int) {
@@ -198,12 +208,9 @@ pub fn get(array: Array(a), index: Int) -> Result(a, Nil) {
   }
 }
 
-/// This function is slightly faster since it doesn't create a result wrapper.
+/// This function is faster than `get` but will panic if the index is out of bounds.
 pub fn unsafe_get(array: Array(a), index: Int) -> a {
-  case index {
-    i if i >= 0 && i < array.size -> do_get(array.root, index, array.level)
-    _ -> panic
-  }
+  do_get(array.root, index, array.level)
 }
 
 pub fn set(array: Array(a), index: Int, value: a) -> Result(Array(a), Nil) {
@@ -214,6 +221,11 @@ pub fn set(array: Array(a), index: Int, value: a) -> Result(Array(a), Nil) {
     }
     _ -> Error(Nil)
   }
+}
+
+pub fn unsafe_set(array: Array(a), index: Int, value: a) -> Array(a) {
+  let root = do_set(array.root, index, value, array.level)
+  Array(array.size, array.level, root)
 }
 
 pub fn fold(array: Array(a), acc: b, fun: fn(b, a) -> b) -> b {

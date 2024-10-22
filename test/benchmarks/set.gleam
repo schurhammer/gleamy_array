@@ -38,6 +38,25 @@ pub fn main() {
 
   bench.run(
     [
+      bench.Input("10", #(utils.build_gleamy_array(10), r10)),
+      bench.Input("100", #(utils.build_gleamy_array(100), r100)),
+      bench.Input("1000", #(utils.build_gleamy_array(1000), r1000)),
+      bench.Input("10000", #(utils.build_gleamy_array(10_000), r10000)),
+      bench.Input("100000", #(utils.build_gleamy_array(100_000), r100000)),
+    ],
+    [
+      bench.Function("gleamy_array (unwrapped)", fn(x) {
+        let #(a, x) = x
+        list.each(x, fn(i) { array.unsafe_set(a, i, 0) })
+      }),
+    ],
+    config.bench,
+  )
+  |> bench.table(config.table)
+  |> io.println()
+
+  bench.run(
+    [
       bench.Input("10", #(utils.build_erlang_array(10), r10)),
       bench.Input("100", #(utils.build_erlang_array(100), r100)),
       bench.Input("1000", #(utils.build_erlang_array(1000), r1000)),
