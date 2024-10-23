@@ -14,11 +14,8 @@ version = "1.0.0"
 
 [dependencies]
 gleam_stdlib = ">= 0.34.0 and < 2.0.0"
-gleamy_bench = ">= 0.4.0 and < 1.0.0"
 
 [dev-dependencies]
+gleamy_bench = ">= 0.4.0 and < 1.0.0"
 gleeunit = ">= 1.0.0 and < 2.0.0"
-humanise = ">= 1.0.2 and < 2.0.0"
-gleam_erlang = ">= 0.27.0 and < 1.0.0"
-shine_tree = ">= 0.0.6 and < 1.0.0"
 glearray = ">= 1.0.0 and < 2.0.0"

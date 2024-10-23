@@ -41,7 +41,7 @@ pub fn build_list(n) {
 }
 
 pub fn random_numbers(n) {
-  let sample_size = 1000
+  let sample_size = 10_000
   strict_range(0, n)
   |> list.repeat(1 + sample_size / n)
   |> list.flatten()
