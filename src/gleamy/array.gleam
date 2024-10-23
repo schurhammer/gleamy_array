@@ -1,10 +1,10 @@
 import gleam/int
 
 /// bits per level
-const bits = 5
+const bits = 4
 
 /// 2^bits - 1
-const mask = 31
+const mask = 15
 
 pub opaque type Array(a) {
   Array(size: Int, level: Int, root: Node(a))
@@ -21,6 +21,14 @@ pub fn tuple0() {
 pub fn tuple2(a, b) {
   #(a, b)
 }
+
+@internal
+pub fn id(a) {
+  a
+}
+
+@external(erlang, "gleamy/array", "id")
+fn cast_to_node(tuple: t) -> Node(a)
 
 @external(erlang, "gleamy/array", "tuple0")
 @external(javascript, "../gleamy_array.ffi.mjs", "new_node")
@@ -137,6 +145,26 @@ fn do_get(n: Node(a), i: Int, level: Int) -> a {
 
 fn do_fold(n: Node(a), f: fn(b, a) -> b, acc: b, l: Int, m: Int, i: Int) -> b {
   case l {
+    // full node optimisation
+    0 if m == 16 -> {
+      let acc = f(acc, leaf_get_element(1, n))
+      let acc = f(acc, leaf_get_element(2, n))
+      let acc = f(acc, leaf_get_element(3, n))
+      let acc = f(acc, leaf_get_element(4, n))
+      let acc = f(acc, leaf_get_element(5, n))
+      let acc = f(acc, leaf_get_element(6, n))
+      let acc = f(acc, leaf_get_element(7, n))
+      let acc = f(acc, leaf_get_element(8, n))
+      let acc = f(acc, leaf_get_element(9, n))
+      let acc = f(acc, leaf_get_element(10, n))
+      let acc = f(acc, leaf_get_element(11, n))
+      let acc = f(acc, leaf_get_element(12, n))
+      let acc = f(acc, leaf_get_element(13, n))
+      let acc = f(acc, leaf_get_element(14, n))
+      let acc = f(acc, leaf_get_element(15, n))
+      let acc = f(acc, leaf_get_element(16, n))
+      acc
+    }
     // leaf that still has more values to fold
     0 if i <= m -> {
       // apply the folding function
@@ -157,6 +185,57 @@ fn do_fold(n: Node(a), f: fn(b, a) -> b, acc: b, l: Int, m: Int, i: Int) -> b {
     }
     // no more elements
     _ -> acc
+  }
+}
+
+fn do_map(
+  na: Node(a),
+  nb: Node(b),
+  f: fn(a) -> b,
+  l: Int,
+  m: Int,
+  i: Int,
+) -> Node(b) {
+  case l {
+    // full node optimisation
+    0 if m == 16 -> {
+      #(
+        f(leaf_get_element(1, na)),
+        f(leaf_get_element(2, na)),
+        f(leaf_get_element(3, na)),
+        f(leaf_get_element(4, na)),
+        f(leaf_get_element(5, na)),
+        f(leaf_get_element(6, na)),
+        f(leaf_get_element(7, na)),
+        f(leaf_get_element(8, na)),
+        f(leaf_get_element(9, na)),
+        f(leaf_get_element(10, na)),
+        f(leaf_get_element(11, na)),
+        f(leaf_get_element(12, na)),
+        f(leaf_get_element(13, na)),
+        f(leaf_get_element(14, na)),
+        f(leaf_get_element(15, na)),
+        f(leaf_get_element(16, na)),
+      )
+      |> cast_to_node()
+    }
+    // leaf that still has more values to map
+    0 if i <= m -> {
+      let nb = leaf_append_element(nb, f(leaf_get_element(i, na)))
+      do_map(na, nb, f, l, m, i + 1)
+    }
+    // node that still has more children to map
+    _ if i <= m -> {
+      // recurse on the child
+      let child = node_get_element(i, na)
+      let child = do_map(child, new_node(), f, l - bits, node_size(child), 1)
+      let nb = node_append_element(nb, child)
+
+      // do the next child
+      do_map(na, nb, f, l, m, i + 1)
+    }
+    // no more elements
+    _ -> nb
   }
 }
 
@@ -223,6 +302,7 @@ pub fn set(array: Array(a), index: Int, value: a) -> Result(Array(a), Nil) {
   }
 }
 
+/// This function is faster than `set` but will panic if the index is out of bounds.
 pub fn unsafe_set(array: Array(a), index: Int, value: a) -> Array(a) {
   let root = do_set(array.root, index, value, array.level)
   Array(array.size, array.level, root)
@@ -230,4 +310,10 @@ pub fn unsafe_set(array: Array(a), index: Int, value: a) -> Array(a) {
 
 pub fn fold(array: Array(a), acc: b, fun: fn(b, a) -> b) -> b {
   do_fold(array.root, fun, acc, array.level, node_size(array.root), 1)
+}
+
+pub fn map(array: Array(a), fun: fn(a) -> b) -> Array(b) {
+  let root =
+    do_map(array.root, new_node(), fun, array.level, node_size(array.root), 1)
+  Array(array.size, array.level, root)
 }
