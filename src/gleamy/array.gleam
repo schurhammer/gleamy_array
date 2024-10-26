@@ -378,6 +378,17 @@ pub fn map(array: Array(a), fun: fn(a) -> b) -> Array(b) {
   Array(array.size, array.level, root)
 }
 
+pub fn filter(array: Array(a), fun: fn(a) -> Bool) -> Array(a) {
+  fold(array, [], fn(a, i) {
+    case fun(i) {
+      True -> [i, ..a]
+      False -> a
+    }
+  })
+  |> list.reverse()
+  |> from_list()
+}
+
 pub fn from_list(items: List(a)) -> Array(a) {
   do_from_list(items, new())
 }
