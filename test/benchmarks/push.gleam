@@ -20,7 +20,7 @@ pub fn main() {
       bench.Input("100000", utils.strict_range(0, 100_000)),
     ],
     [
-      bench.Function("gleamy_array", fn(x) {
+      bench.Function("gleamy_array push", fn(x) {
         list.fold(x, array.new(), fn(a, i) { array.push(a, i) })
       }),
     ],
@@ -37,8 +37,22 @@ pub fn main() {
       bench.Input("10000", utils.strict_range(0, 10_000)),
       bench.Input("100000", utils.strict_range(0, 100_000)),
     ],
+    [bench.Function("gleamy_array from_list", fn(x) { array.from_list(x) })],
+    config.bench,
+  )
+  |> bench.table(config.table)
+  |> io.println()
+
+  bench.run(
     [
-      bench.Function("erlang_array", fn(x) {
+      bench.Input("10", utils.strict_range(0, 10)),
+      bench.Input("100", utils.strict_range(0, 100)),
+      bench.Input("1000", utils.strict_range(0, 1000)),
+      bench.Input("10000", utils.strict_range(0, 10_000)),
+      bench.Input("100000", utils.strict_range(0, 100_000)),
+    ],
+    [
+      bench.Function("erlang_array set", fn(x) {
         list.fold(x, erlang_array.new(), fn(a, i) { erlang_array.set(i, i, a) })
       }),
     ],

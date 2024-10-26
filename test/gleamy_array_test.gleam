@@ -19,6 +19,25 @@ fn strict_range(from start: Int, to stop: Int) {
   do_strict_range(start, stop - 1, [])
 }
 
+pub fn from_list_test() {
+  let n = 1000
+
+  strict_range(0, n)
+  |> list.each(fn(i) {
+    let l = strict_range(0, i)
+    let a = list.fold(l, array.new(), fn(a, i) { array.push(a, i) })
+    let b = array.from_list(l)
+    case a == b {
+      True -> Nil
+      False -> {
+        io.debug(a)
+        io.debug(b)
+        panic
+      }
+    }
+  })
+}
+
 pub fn push_pop_are_inverse_test() {
   let n = 1000
 

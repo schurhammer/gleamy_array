@@ -1,4 +1,5 @@
 import gleam/int
+import gleam/list
 
 /// bits per level
 const bits = 4
@@ -239,6 +240,65 @@ fn do_map(
   }
 }
 
+fn do_from_list(items: List(a), array: Array(a)) -> Array(a) {
+  case items {
+    // full node optimisation
+    [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, ..rest] -> {
+      let leaf =
+        #(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p)
+        |> cast_to_node()
+
+      let n = int.bitwise_shift_right(array.size, bits)
+      let max = int.bitwise_shift_left(1, array.level)
+      let array = case n {
+        // grow a new root when necessary
+        _ if n >= max -> {
+          let child =
+            do_push_full_leaf(new_node(), array.size, leaf, array.level)
+          let root = new_node_2(array.root, child)
+          Array(array.size + 16, array.level + bits, root)
+        }
+        _ -> {
+          let root =
+            do_push_full_leaf(array.root, array.size, leaf, array.level)
+          Array(array.size + 16, array.level, root)
+        }
+      }
+
+      do_from_list(rest, array)
+    }
+    // handle remaining elements one at a time
+    [head, ..rest] -> {
+      do_from_list(rest, push(array, head))
+    }
+    [] -> array
+  }
+}
+
+fn do_push_full_leaf(n: Node(a), i: Int, v: Node(a), level: Int) {
+  case level {
+    0 -> v
+    _ if level == bits -> node_append_element(n, v)
+    _ -> {
+      let key = 1 + int.bitwise_and(int.bitwise_shift_right(i, level), mask)
+      case node_size(n) {
+        // if key > size we have to create a new internal node
+        size if key > size -> {
+          let child = new_node()
+          let child = do_push_full_leaf(child, i, v, level - bits)
+          node_append_element(n, child)
+        }
+        // otherwise we push inside the existing internal node
+        _ -> {
+          let child = node_get_element(key, n)
+          let child = do_push_full_leaf(child, i, v, level - bits)
+          node_set_element(key, n, child)
+        }
+      }
+    }
+  }
+}
+
 pub fn new() {
   Array(0, 0, new_node())
 }
@@ -316,4 +376,8 @@ pub fn map(array: Array(a), fun: fn(a) -> b) -> Array(b) {
   let root =
     do_map(array.root, new_node(), fun, array.level, node_size(array.root), 1)
   Array(array.size, array.level, root)
+}
+
+pub fn from_list(items: List(a)) -> Array(a) {
+  do_from_list(items, new())
 }
